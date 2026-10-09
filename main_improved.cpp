@@ -7,47 +7,34 @@
 #include <cctype>
 using namespace std;
 
-// A single joke, split into its question and punchline
-struct Joke {
-    string question;
-    string punchline;
-};
+struct Joke { string question, punchline; };
 
-// Function 1: Remove trailing \r or whitespace (handles files saved on Windows)
+// Remove trailing \r or whitespace (handles files saved on Windows)
 string trim(string text) {
     while (!text.empty() && (text.back() == '\r' || text.back() == '\n' || text.back() == ' '))
         text.pop_back();
     return text;
 }
 
-// Function 2: Load jokes from the text file
+// Load jokes from the text file
 vector<Joke> loadJokes(const string& filename) {
     ifstream file(filename);
     vector<Joke> jokes;
     string line;
-
     if (!file.is_open()) {
         cout << "Error: Could not open " << filename << "\n";
-        return jokes; // empty vector signals failure to caller
+        return jokes;
     }
-
     while (getline(file, line)) {
         line = trim(line);
-        size_t question = line.find('?');
-
-        if (!line.empty() && question != string::npos) {
-            Joke joke;
-            joke.question = line.substr(0, question + 1);
-            joke.punchline = line.substr(question + 1);
-            jokes.push_back(joke);
-        }
+        size_t q = line.find('?');
+        if (!line.empty() && q != string::npos)
+            jokes.push_back({line.substr(0, q + 1), line.substr(q + 1)});
     }
-
-    file.close();
     return jokes;
 }
 
-// Function 3: Convert text to lowercase
+// Convert text to lowercase
 string toLowerCase(string text) {
     transform(text.begin(), text.end(), text.begin(),
         [](unsigned char c) { return tolower(c); });
@@ -56,7 +43,6 @@ string toLowerCase(string text) {
 
 int main() {
     vector<Joke> jokes = loadJokes("randomJokes.txt");
-
     if (jokes.empty()) {
         cout << "No valid jokes found in the file.\n";
         return 1;
@@ -66,7 +52,7 @@ int main() {
     mt19937 generator(rd());
     uniform_int_distribution<int> pick(0, static_cast<int>(jokes.size()) - 1);
 
-    int lastIndex = -1; // tracks the previous joke so we can avoid repeats
+    int lastIndex = -1;
     string command;
     char again = 'y';
 
@@ -84,22 +70,18 @@ int main() {
         }
 
         int index = pick(generator);
-        if (jokes.size() > 1) {
-            while (index == lastIndex)
-                index = pick(generator);
-        }
+        if (jokes.size() > 1)
+            while (index == lastIndex) index = pick(generator);
         lastIndex = index;
 
         cout << "\n" << jokes[index].question << endl;
         cout << "Press Enter to reveal the punchline...";
         getline(cin, command);
-
         cout << jokes[index].punchline << endl;
 
         cout << "\nWould you like another joke? (y/n): ";
         getline(cin, command);
         command = toLowerCase(trim(command));
-
         again = (command == "y" || command == "yes") ? 'y' : 'n';
     }
 
